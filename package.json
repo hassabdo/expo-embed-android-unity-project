@@ -1,0 +1,47 @@
+{
+  "name": "expo-embed-android-unity-project",
+  "version": "0.0.1",
+  "author": "Hassen ABDELJAOUED",
+  "license": "MIT",
+  "description": "An Expo config plugin to embed a Unity Android project as a library into an Expo project using @azesmway/react-native-unity.",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "expo",
+    "unity",
+    "react-native",
+    "config-plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hassabdo/expo-embed-android-unity-project.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/hassabdo/expo-embed-android-unity-project/issues"
+  },
+  "homepage": "https://github.com/hassabdo/expo-embed-android-unity-project#readme",
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  },
+  "engines": {
+    "node": ">= 18.0.0"
+  },
+  "dependencies": {
+    "@expo/config-plugins": "^8.0.4",
+    "expo-module-scripts": "^3.5.2",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "typescript": "^5.4.5"
+  }
+}
