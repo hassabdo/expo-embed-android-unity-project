@@ -1,6 +1,6 @@
 {
   "name": "expo-embed-android-unity-project",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Hassen ABDELJAOUED",
   "license": "MIT",
   "description": "An Expo config plugin to embed a Unity Android project as a library into an Expo project using @azesmway/react-native-unity.",
