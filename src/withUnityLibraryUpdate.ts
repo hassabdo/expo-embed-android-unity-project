@@ -22,7 +22,7 @@ export async function updateUnityLibraryBuildGradle(unityProjectPath: string): P
     const unityNdkPath = process.env.UNITY_NDK_PATH;
 
     if (!unitySdkPath || !unityNdkPath) {
-      throw new Error('UNITY_SDK_PATH and UNITY_NDK_PATH environment variables must be set.');
+        throw new Error('UNITY_SDK_PATH and UNITY_NDK_PATH environment variables must be set.');
     }
     await writeToLocalProperties(unityProjectPath, unitySdkPath, unityNdkPath)
     const unityLibraryBuildGradlePath = path.resolve(unityProjectPath, 'unityLibrary/build.gradle');
@@ -81,6 +81,9 @@ export async function removeIntentFilter(unityProjectPath: string): Promise<any>
             activities.forEach((activity: any) => {
                 if (activity['intent-filter']) {
                     delete activity['intent-filter'];
+                }
+                if (!activity['$']['android:exported']) {
+                    activity['$']['android:exported'] = 'true';
                 }
             });
         }
