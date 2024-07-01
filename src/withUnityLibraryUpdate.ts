@@ -28,17 +28,13 @@ export async function updateUnityLibraryBuildGradle(unityProjectPath: string): P
 
     // Read the existing content of unityLibrary/build.gradle
     let existingContent = await fs.promises.readFile(unityLibraryBuildGradlePath, 'utf8');
-    // Remove the existing getNdkDir and getSdkDir methods if they exist
-    existingContent = existingContent.replace(/def getNdkDir\(\) \{[^}]+\}/g, '');
-    existingContent = existingContent.replace(/def getSdkDir\(\) \{[^}]+\}/g, '');
+
     // Add ndkVersion to defaultConfig if it doesn't exist
     if (!existingContent.includes('ndkVersion')) {
         existingContent = existingContent.replace(/defaultConfig \{/, `defaultConfig {\n        ndkVersion "${unityNdkVersion}"`);
     }
-
-    // Replace all occurrences of getNdkDir() and getSdkDir() with the respective properties
-    existingContent = existingContent.replace(/getNdkDir\(\)/g, 'android.ndkDirectory.absolutePath');
-    existingContent = existingContent.replace(/getSdkDir\(\)/g, 'android.sdkDirectory.absolutePath');
+    existingContent = existingContent.replace(/android\.ndkDirectory/, 'android.ndkDirectory.absolutePath');
+    existingContent = existingContent.replace(/(?<!def )getSdkDir\(\)/g, 'android.sdkDirectory.absolutePath');
 
     // Write the updated content back to the build.gradle file
     await fs.promises.writeFile(unityLibraryBuildGradlePath, existingContent, 'utf8');
