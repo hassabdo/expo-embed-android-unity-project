@@ -2,66 +2,46 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as xml2js from 'xml2js';
 
-async function writeToLocalProperties(unityProjectPath: string, sdkDir: string, ndkDir: string): Promise<any> {
-    const sourcePath = path.resolve(unityProjectPath, 'local.properties');
-    const destinationPath = path.resolve(unityProjectPath, 'unityLibrary/local.properties');
-    const content = `sdk.dir=${sdkDir}\nndk.dir=${ndkDir}`;
+async function removeLocalProperties(unityProjectPath: string): Promise<any> {
+    const localPropertiesPath = path.resolve(unityProjectPath, 'local.properties');
     try {
-        // Write the content to unityLibrary/local.properties
-        await fs.promises.writeFile(sourcePath, content, 'utf8');
-        await fs.promises.writeFile(destinationPath, content, 'utf8');
-    } catch (error) {
-        // File not found or error reading/writing file
-        console.error(`Error copying local.properties: ${error}`);
+        await fs.promises.unlink(localPropertiesPath);
+        console.log(`Removed local.properties from ${localPropertiesPath}`);
+    } catch (err: any) {
+        if (err.code !== 'ENOENT') {
+            throw err;
+        }
+        console.warn(`local.properties not found at ${localPropertiesPath}, skipping removal.`);
     }
 }
 
 
 export async function updateUnityLibraryBuildGradle(unityProjectPath: string): Promise<any> {
-    const unitySdkPath = process.env.UNITY_SDK_PATH;
-    const unityNdkPath = process.env.UNITY_NDK_PATH;
+    const unityNdkVersion = process.env.UNITY_NDK_VERSION;
 
-    if (!unitySdkPath || !unityNdkPath) {
-        throw new Error('UNITY_SDK_PATH and UNITY_NDK_PATH environment variables must be set.');
+    if (!unityNdkVersion) {
+        throw new Error('UNITY_NDK_VERSION environment variable must be set.');
     }
-    await writeToLocalProperties(unityProjectPath, unitySdkPath, unityNdkPath)
+
+    await removeLocalProperties(unityProjectPath)
     const unityLibraryBuildGradlePath = path.resolve(unityProjectPath, 'unityLibrary/build.gradle');
-    // Define the content to be added
-    const methodContent = `
-def getNdkDir() {
-    Properties local = new Properties()
-    local.load(new FileInputStream("\${projectDir}/local.properties"))
-    return local.getProperty('ndk.dir')
-}
-`;
 
     // Read the existing content of unityLibrary/build.gradle
     let existingContent = await fs.promises.readFile(unityLibraryBuildGradlePath, 'utf8');
-
-    // Find the position of getSdkDir() method
-    const sdkDirMethodIndex = existingContent.indexOf('def getSdkDir()');
-    const ndkDirMethodIndex = existingContent.indexOf('def getNdkDir()');
-
-    if (ndkDirMethodIndex == -1) {
-        if (sdkDirMethodIndex !== -1) {
-            // Insert the method content after getSdkDir() method
-            let updatedContent = existingContent.slice(0, sdkDirMethodIndex) + methodContent + "\n" + existingContent.slice(sdkDirMethodIndex);
-            // Replace the line with the new content
-            updatedContent = updatedContent.replace(
-                /android\.ndkDirectory/,
-                'getNdkDir()'
-            );
-            updatedContent = updatedContent.replace(
-                /rootDir/,
-                'projectDir'
-            );
-            await fs.promises.writeFile(unityLibraryBuildGradlePath, updatedContent, 'utf8');
-        } else {
-            console.warn('Method getSdkDir() not found in unityLibrary/build.gradle');
-        }
-    } else {
-        console.warn('Method getNdkDir() already exists in unityLibrary/build.gradle');
+    // Remove the existing getNdkDir and getSdkDir methods if they exist
+    existingContent = existingContent.replace(/def getNdkDir\(\) \{[^}]+\}/g, '');
+    existingContent = existingContent.replace(/def getSdkDir\(\) \{[^}]+\}/g, '');
+    // Add ndkVersion to defaultConfig if it doesn't exist
+    if (!existingContent.includes('ndkVersion')) {
+        existingContent = existingContent.replace(/defaultConfig \{/, `defaultConfig {\n        ndkVersion "${unityNdkVersion}"`);
     }
+
+    // Replace all occurrences of getNdkDir() and getSdkDir() with the respective properties
+    existingContent = existingContent.replace(/getNdkDir\(\)/g, 'android.ndkDirectory.absolutePath');
+    existingContent = existingContent.replace(/getSdkDir\(\)/g, 'android.sdkDirectory.absolutePath');
+
+    // Write the updated content back to the build.gradle file
+    await fs.promises.writeFile(unityLibraryBuildGradlePath, existingContent, 'utf8');
 }
 
 export async function removeIntentFilter(unityProjectPath: string): Promise<any> {
